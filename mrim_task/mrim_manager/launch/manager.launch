@@ -1,7 +1,15 @@
 <launch>
 
-  <arg name="RUN_TYPE"           default="offline" />
-
+  <arg name="RUN_TYPE" default="offline" />
+  
+  <!-- UAV names for virtual -->
+  <arg unless="$(eval arg('RUN_TYPE') == 'uav')" name="UAV_NAME_1" value="uav1" />
+  <arg unless="$(eval arg('RUN_TYPE') == 'uav')" name="UAV_NAME_2" value="uav2" />
+  <!-- UAV names for UAV -->
+  <arg if="$(eval arg('RUN_TYPE') == 'uav')" name="UAV_NAME_1" value="$(env SS_UAV_NAME_1)" />
+  <arg if="$(eval arg('RUN_TYPE') == 'uav')" name="UAV_NAME_2" value="$(env SS_UAV_NAME_2)" />
+  
+  <!-- Configs -->
   <arg name="config"             default="" />
   <arg name="config/constraints" default="" />
 
@@ -23,16 +31,16 @@
 
     <!-- Parameters -->
     <param name="rviz_config" value="$(find mrim_manager)/config/rviz/$(arg RUN_TYPE).rviz" />
-    <param name="run_type" value="$(arg RUN_TYPE)" />
+    <param name="run_type"    value="$(arg RUN_TYPE)" />
 
     # Remap service servers
-    <remap from="start_monitoring_in"       to="~start_monitoring" />
+    <remap from="start_monitoring_in" to="~start_monitoring" />
 
     # Remap subscribers
     <remap from="trajectory_1_in"       to="/mrim_planner/trajectory_1" />
     <remap from="trajectory_2_in"       to="/mrim_planner/trajectory_2" />
-    <remap from="uav_state_1_in"        to="/uav1/odometry/uav_state" />
-    <remap from="uav_state_2_in"        to="/uav2/odometry/uav_state" />
+    <remap from="uav_state_1_in"        to="/$(arg UAV_NAME_1)/odometry/uav_state" />
+    <remap from="uav_state_2_in"        to="/$(arg UAV_NAME_2)/odometry/uav_state" />
     <remap from="inspection_problem_in" to="/mrim_planner/problem" />
     <remap from="pause_playback_in"     to="/pause_playback" />
 

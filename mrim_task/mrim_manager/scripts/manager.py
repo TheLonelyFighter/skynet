@@ -252,6 +252,8 @@ class MrimManager:
         self.uav_states = [None, None] # expects two UAVs only
         self.solution_time_start = -1.0
         self.solution_time_end = -1.0
+        self.uav_state1_received = False
+        self.uav_state2_received = False
 
         rospy.Subscriber("inspection_problem_in", InspectionProblem, self.callbackInspectionProblem)
         rospy.Subscriber("pause_playback_in", Empty, self.callbackPausePlayback)
@@ -410,7 +412,8 @@ class MrimManager:
             rospy.logerr("[MrimManager] TRAJECTORY CHECKS: {:s}".format(boolToString(overall_status)))
 
         # start overall status publishing
-        self.overall_status = not run_type == 'uav' and (flight_always_allowed or overall_status)
+        if not run_type == 'uav':
+            self.overall_status = (flight_always_allowed or overall_status)
         rospy.Timer(rospy.Duration(1), self.publishOverallStatus)
 
         # if overall_status:
@@ -891,6 +894,10 @@ class MrimManager:
 
         solution_time_penalty = self.checkMaximumSolutionTime()
 
+        while not self.uav_state1_received and not self.uav_state2_received:
+            rospy.loginfo("[MrimManager] Waiting for UAV odometry states.")
+            rospy.Rate(1.0).sleep()
+
         with self.uav_states_lock:
             self.task_monitor = TaskMonitor(trajectories, self.pcl_map, self.uav_states, minimum_obstacle_distance, minimum_mutual_distance)
 
@@ -1119,12 +1126,12 @@ class MrimManager:
     # #{ callbackUavStates()
 
     def callbackUavState1(self, msg):
-        self.uav_state1_subscribed = True
+        self.uav_state1_received = True
         with self.uav_states_lock:
             self.uav_states[0] = msg
 
     def callbackUavState2(self, msg):
-        self.uav_state2_subscribed = True
+        self.uav_state2_received = True
         with self.uav_states_lock:
             self.uav_states[1] = msg
 
