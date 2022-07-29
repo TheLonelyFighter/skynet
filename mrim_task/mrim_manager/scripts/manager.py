@@ -253,6 +253,9 @@ class MrimManager:
         self.solution_time_start = -1.0
         self.solution_time_end = -1.0
 
+        self.uav_state1_subscribed = False
+        self.uav_state2_subscribed = False
+
         rospy.Subscriber("inspection_problem_in", InspectionProblem, self.callbackInspectionProblem)
         rospy.Subscriber("pause_playback_in", Empty, self.callbackPausePlayback)
         rospy.Subscriber("uav_state_1_in", UavState, self.callbackUavState1)
@@ -891,6 +894,10 @@ class MrimManager:
 
         solution_time_penalty = self.checkMaximumSolutionTime()
 
+        while not self.uav_state1_subscribed or not self.uav_state2_subscribed:
+            rospy.loginfo("[MrimManager] Waiting for UAV states.")
+            rospy.Rate(1.0).sleep()
+
         with self.uav_states_lock:
             self.task_monitor = TaskMonitor(trajectories, self.pcl_map, self.uav_states, minimum_obstacle_distance, minimum_mutual_distance)
 
@@ -912,8 +919,7 @@ class MrimManager:
         poses = []
         with self.uav_states_lock:
             for uav_state in self.uav_states:
-                if uav_state is not None:
-                    poses.append(uavStateMsgToTrajectoryPoint(uav_state))
+                poses.append(uavStateMsgToTrajectoryPoint(uav_state))
 
         if not self.evaluator_.checkFinalPositions(poses):
             with self.diag_msg_lock:

@@ -1,7 +1,7 @@
 print_info: False
 
 # Frames
-global_frame: "gps_origin"
+global_frame: "rtk_origin"
 uav_names: ["uav1", "uav2"]
 
 # Dynamic constraints of the UAVs
