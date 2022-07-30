@@ -67,6 +67,8 @@
     <remap from="~load_trajectory_1_out" to="/$(arg SS_UAV_NAME_1)/control_manager/trajectory_reference" />
     <remap from="~load_trajectory_2_out" to="/$(arg SS_UAV_NAME_2)/control_manager/trajectory_reference" />
 
+    <remap from="~start_out" to="/mrim_manager/start_monitoring" />
+
     <!-- Service servers -->
     <remap from="~start_in" to="~start" />
 
