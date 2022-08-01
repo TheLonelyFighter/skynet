@@ -128,7 +128,7 @@ NVIDIA_COUNT_2=$( command -v nvidia-smi >> /dev/null 2>&1 && (nvidia-smi -L | gr
 if [ "$NVIDIA_COUNT_1" -ge "1" ] || [ "$NVIDIA_COUNT_2" -ge "1" ]; then
 
   # check if nvidia is active
-  NVIDIA_NOT_ACTIVE=$( command -v nvidia-smi >> /dev/null 2>&1 && ( nvidia-smi | grep "NVIDIA-SMI has failed" ) || echo 0 )
+  NVIDIA_NOT_ACTIVE=$( command -v nvidia-smi >> /dev/null 2>&1 && ( nvidia-smi | grep -i "NVIDIA-SMI has failed" | wc -l ) || echo 0 )
 
   if [ "$NVIDIA_NOT_ACTIVE" -ge "1" ]; then
     echo "Warning: nvidia graphics detected, however, it is not used. Starting without using nvidia."
