@@ -2,13 +2,13 @@ name: Focal
 
 on:
   push:
-    branches: [ master ]
+    branches: [ nogui ]
     paths-ignore:
       - '**/README.md'
       - '**.yaml'
       - '**.launch'
   pull_request:
-    branches: [ master ]
+    branches: [ nogui ]
 
   schedule:
     - cron:  '0 0 * * *' # at the end of every day
@@ -39,3 +39,6 @@ jobs:
 
       - name: Install
         run: ./.ci/install.sh
+
+      - name: Run
+        run: ./.ci/run.sh
