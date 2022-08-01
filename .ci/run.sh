@@ -2,6 +2,5 @@
 
 set -e
 
-cd
-cd git/summer-school-2022/simulation
-./run_offline -n
+cd ~/git/summer-school-2022/simulation
+./run_offline.sh -n
