@@ -203,6 +203,8 @@ class TrajectoryUtils():
                 # [STUDENTS TODO] Change variable 'hdg_interp', nothing else
                 hdg_interp = waypoints[0].heading
 
+                hdg_interp = d_hdg
+
                 # replace heading
                 hdg_from   = hdg_interp
                 wp         = subtraj[i]
