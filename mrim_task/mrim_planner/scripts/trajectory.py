@@ -185,6 +185,7 @@ class TrajectoryUtils():
             subtraj_len = self.getLength(subtraj)
 
             ## | ----------------------- Interpolate ---------------------- |
+            hdg_acc = 0 # distance accumulator
 
             # include start node
             wps_interp.append(subtraj[0])
@@ -192,18 +193,19 @@ class TrajectoryUtils():
             # interpolate headings
             for i in range(1, len(subtraj) - 1):
 
+                #  - interpolate the heading linearly (create a function of distance between two points of the subpath)
                 subtraj_0 = subtraj[i - 1].point
                 subtraj_1 = subtraj[i].point
 
+                hdg_acc += distEuclidean(subtraj_0, subtraj_1)
+                hdg_proportion = hdg_acc / subtraj_len
+
                 # [STUDENTS TODO, COMPULSORY] Implement heading interpolation here
                 # Tips:
-                #  - interpolate the heading linearly (create a function of distance between two points of the subpath)
-                #  - do not forget to wrap angle to <-pi, pi) (see/use wrapAngle() in utils.py)
 
                 # [STUDENTS TODO] Change variable 'hdg_interp', nothing else
-                hdg_interp = waypoints[0].heading
-
-                hdg_interp = d_hdg
+                #  - do not forget to wrap angle to <-pi, pi) (see/use wrapAngle() in utils.py)
+                hdg_interp = wrapAngle(hdg_proportion*d_hdg + hdg_from)
 
                 # replace heading
                 hdg_from   = hdg_interp
@@ -613,7 +615,7 @@ class TrajectoryUtils():
             #raise NotImplementedError('[STUDENTS TODO] Collision prevention method \'delay_till_no_collisions_occur\' not finished. You have to finish it on your own.')
             # Tips:
             #  - you might select which trajectory it is better to delay
-            #  - the smallest delay step is the sampling step stored in variable 'self.dT'
+        #  - the smallest delay step is the sampling step stored in variable 'self.dT'
 
             delay_step = self.dT * 2
             traj_times = [t.getTime() for t in trajectories]
@@ -635,9 +637,7 @@ class TrajectoryUtils():
                 if i < 10:
                     delay_t += delay_step
                     # TIP: use function `trajectory.delayStart(X)` to delay a UAV at the start location by X seconds
-                    #trajectories[delay_robot_idx].delayStart(delay_step)
-                    #trajectories[delay_robot_idx].delaySta
-                    #TODO decide how to delay
+                    trajectories[delay_robot_idx].delayStart(delay_step)
                     i += 1
                 else:
                     collision_flag = False
