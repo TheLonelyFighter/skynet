@@ -615,7 +615,7 @@ class TrajectoryUtils():
             #  - you might select which trajectory it is better to delay
             #  - the smallest delay step is the sampling step stored in variable 'self.dT'
 
-            delay_step = self.dT
+            delay_step = self.dT * 2
             traj_times = [t.getTime() for t in trajectories]
             traj_lens  = [t.getLength() for t in trajectories]
 
@@ -635,7 +635,10 @@ class TrajectoryUtils():
                 if i < 10:
                     delay_t += delay_step
                     # TIP: use function `trajectory.delayStart(X)` to delay a UAV at the start location by X seconds
-                    trajectories[delay_robot_idx].delayStart(delay_step)
+                    #trajectories[delay_robot_idx].delayStart(delay_step)
+                    #trajectories[delay_robot_idx].delaySta
+                    #TODO decide how to delay
+                    i += 1
                 else:
                     collision_flag = False
 
