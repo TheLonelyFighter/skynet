@@ -17,7 +17,7 @@ path_planner:
   rrt:
     branch_size: 2.0 # (m)
     sampling:
-      method: 'uniform' # [STUDENTS TODO: implement better method than the default] Method for sampling random points: [uniform (default), gaussian]
+      method: 'gaussian' # [STUDENTS TODO: implement better method than the default] Method for sampling random points: [uniform (default), gaussian]
       gaussian:
         stddev_inflation: 0.2 # Inflation of standard deviation in all axes during gaussian sampling (m)
     star:

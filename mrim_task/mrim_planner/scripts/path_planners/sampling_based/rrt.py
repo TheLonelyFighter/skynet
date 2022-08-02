@@ -139,15 +139,21 @@ class RRT:
         point_valid = False
         while not point_valid:
 
-            raise NotImplementedError('[STUDENTS TODO] Implement Gaussian sampling in RRT to speed up the process and narrow the paths.')
-            # Tips:
             #  - sample from Normal distribution: use numpy.random.normal (https://numpy.org/doc/stable/reference/random/generated/numpy.random.normal.html)
+            # Clamp between [min, max] for the appropriate dimension
+            x = max(self.bounds.point_min.x, min(
+                self.bounds.point_max.x, 
+                np.random.normal(loc=mean[0], scale=sigma[0]) ) )
+            y = max(self.bounds.point_min.y, min(
+                self.bounds.point_max.y, 
+                np.random.normal(loc=mean[1], scale=sigma[1]) ) )
+            z = max(self.bounds.point_min.z, min(
+                self.bounds.point_max.z, 
+                np.random.normal(loc=mean[2], scale=sigma[2]) ) )
+            
             #  - to prevent deadlocks when sampling continuously, increase the sampling space by inflating the standard deviation of the gaussian sampling
-
-            # STUDENTS TODO: Sample XYZ in the state space
-            x = 0
-            y = 0
-            z = 0
+            # Experimental: Increase sigma by ~1.1 each iteration
+            sigma *= 1.1
 
             point = Point(x, y, z)
             point_valid = self.pointValid(point)
