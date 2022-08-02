@@ -615,7 +615,7 @@ class TrajectoryUtils():
             #raise NotImplementedError('[STUDENTS TODO] Collision prevention method \'delay_till_no_collisions_occur\' not finished. You have to finish it on your own.')
             # Tips:
             #  - you might select which trajectory it is better to delay
-            #  - the smallest delay step is the sampling step stored in variable 'self.dT'
+        #  - the smallest delay step is the sampling step stored in variable 'self.dT'
 
             delay_step = self.dT
             traj_times = [t.getTime() for t in trajectories]
@@ -638,6 +638,7 @@ class TrajectoryUtils():
                     delay_t += delay_step
                     # TIP: use function `trajectory.delayStart(X)` to delay a UAV at the start location by X seconds
                     trajectories[delay_robot_idx].delayStart(delay_step)
+                    i += 1
                 else:
                     collision_flag = False
 
