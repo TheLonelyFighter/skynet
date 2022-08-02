@@ -8,6 +8,7 @@ import numpy as np
 from random import randint
 
 from sklearn.cluster import KMeans
+from sklearn.metrics import pairwise_distances
 from scipy.spatial.kdtree import KDTree
 
 from utils import *
@@ -21,7 +22,7 @@ class TSPSolver3D():
 
     ALLOWED_PATH_PLANNERS               = ('euclidean', 'astar', 'rrt', 'rrtstar')
     ALLOWED_DISTANCE_ESTIMATION_METHODS = ('euclidean', 'astar', 'rrt', 'rrtstar')
-    GRID_PLANNERS                       = ('astar')
+    GRID_PLANNERS                       = ('astar', )
 
     def __init__(self):
         self.lkh = LKHInvoker()
@@ -268,13 +269,51 @@ class TSPSolver3D():
             # Prepare positions of the viewpoints in the world
             positions = np.array([vp.pose.point.asList() for vp in viewpoints])
 
-            raise NotImplementedError('[STUDENTS TODO] KMeans clustering of viewpoints not implemented. You have to finish it on your own')
-            # Tips:
             #  - utilize sklearn.cluster.KMeans implementation (https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html)
-            #  - after finding the labels, you may want to swap the classes (e.g., by looking at the distance of the UAVs from the cluster centers)
+            kmeans_res = KMeans(n_clusters=k).fit(positions)
 
-            # TODO: fill 1D list 'labels' of size len(viewpoints) with indices of the robots
-            labels = [randint(0, k - 1) for vp in viewpoints]
+            #  - after finding the labels, you may want to swap the classes (e.g., by looking at the distance of the UAVs from the cluster centers)
+            # Get pairwise distances between cluster centers and initial UAV positions
+            cluster_ctrs = kmeans_res.cluster_centers_
+            start_poses = np.array([
+                [
+                    problem.start_poses[i].position.x,
+                    problem.start_poses[i].position.y,
+                    problem.start_poses[i].position.z,
+                ] for i in range(k)
+            ])
+
+            # We use euclidean distance as the pairwise distance metric
+            d_mat = pairwise_distances(cluster_ctrs, start_poses)
+
+            # Mapping cluster index to UAV index
+            assigned_clusters = dict.fromkeys(range(k), -1)
+            
+            # Assign index to the cluster center with the minimum distance.
+            # Implicitly, UAV1 has priority over UAV2.
+            for ctr_it in range(k):
+                min_dist = np.inf
+                for uav_it in range(k):
+                    # Check for minimal distance
+                    if d_mat[ctr_it, uav_it] < min_dist:
+                        # Check that there are no duplicates
+                        if uav_it not in assigned_clusters.values():
+                            min_dist = d_mat[ctr_it, uav_it]
+                            assigned_clusters[ctr_it] = uav_it
+
+            # for debugging
+            print("Distance Matrix")
+            print(d_mat)
+            print("Assigned clusters")
+            print(assigned_clusters)
+
+            assert len(assigned_clusters) == len(set(assigned_clusters.values())), f"There is a duplicate assignment during clustering. assigned_clusters: f{assigned_clusters}"
+
+            labels = kmeans_res.labels_
+            for i in range(len(labels)):
+                # Simply call the mapping from cluster index to UAV index
+                labels[i] = assigned_clusters[labels[i]]
+
 
         ## | -------------------- Random clustering ------------------- |
         else:
