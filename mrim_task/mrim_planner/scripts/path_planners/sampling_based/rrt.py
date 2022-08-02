@@ -81,13 +81,14 @@ class RRT:
         # smooth the path
         if straighten:
             for i in range(2):
+                # print(f"RRT path straighten it {i+1}:", path)
                 path = self.halveAndTest(path)
+
+        # print('rrt path:', path)
 
         distance = 0.0
         for i in range(1, len(path)):
             distance += distEuclidean(path[i - 1], path[i])
-
-        # print('rrt path:', path)
 
         return path, distance
     # # #}
@@ -143,15 +144,16 @@ class RRT:
             # Clamp between [min, max] for the appropriate dimension
             x = max(self.bounds.point_min.x, min(
                 self.bounds.point_max.x, 
-                np.random.normal(loc=mean[0], scale=sigma[0]+sigma_offset) ) )
+                np.random.normal(loc=mean[0], scale=sigma[0]) ) )
             y = max(self.bounds.point_min.y, min(
                 self.bounds.point_max.y, 
-                np.random.normal(loc=mean[1], scale=sigma[1]+sigma_offset) ) )
+                np.random.normal(loc=mean[1], scale=sigma[1]) ) )
             z = max(self.bounds.point_min.z, min(
                 self.bounds.point_max.z, 
-                np.random.normal(loc=mean[2], scale=sigma[2]+sigma_offset) ) )
+                np.random.normal(loc=mean[2], scale=sigma[2]) ) )
             
             #  - to prevent deadlocks when sampling continuously, increase the sampling space by inflating the standard deviation of the gaussian sampling
+            sigma *= 1.1
 
             point = Point(x, y, z)
             point_valid = self.pointValid(point)
@@ -295,21 +297,23 @@ class RRT:
 
     # # #{ halveAndTest()
     def halveAndTest(self, path):
-        pt1 = path[0][0:3]
-        pt2 = path[-1][0:3]
-        
         if len(path) <= 2:
             return path
+        
+        pt1 = path[0][0:3]
+        pt2 = path[-1][0:3]
 
-        raise NotImplementedError('[STUDENTS TODO] RRT: path straightening is not finished. Finish it on your own.')
-        # Tips:
         #  - divide the given path by a certain ratio and use this method recursively
+        # This divide-and-conquer method smooths the path by checking if a line from the
+        # start to end of the path meets with any obstacles. If so, the path is smoothened.
+        # If not, recursively compare halves of the proposed path. 
 
         if not self.validateLinePath(pt1, pt2, check_bounds=False):
             
-            # [STUDENTS TODO] Replace seg1 and seg2 variables effectively
-            seg1 = path[:1]
-            seg2 = path[1:]
+            # Split the path into rough halves.
+            # Recursively call the algorithm on the two halves.
+            seg1 = self.halveAndTest( path[:len(path)//2] )
+            seg2 = self.halveAndTest( path[len(path)//2:] )
 
             seg1.extend(seg2)
             return seg1
