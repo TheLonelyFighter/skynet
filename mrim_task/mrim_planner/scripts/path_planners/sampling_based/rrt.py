@@ -143,17 +143,15 @@ class RRT:
             # Clamp between [min, max] for the appropriate dimension
             x = max(self.bounds.point_min.x, min(
                 self.bounds.point_max.x, 
-                np.random.normal(loc=mean[0], scale=sigma[0]) ) )
+                np.random.normal(loc=mean[0], scale=sigma[0]+sigma_offset) ) )
             y = max(self.bounds.point_min.y, min(
                 self.bounds.point_max.y, 
-                np.random.normal(loc=mean[1], scale=sigma[1]) ) )
+                np.random.normal(loc=mean[1], scale=sigma[1]+sigma_offset) ) )
             z = max(self.bounds.point_min.z, min(
                 self.bounds.point_max.z, 
-                np.random.normal(loc=mean[2], scale=sigma[2]) ) )
+                np.random.normal(loc=mean[2], scale=sigma[2]+sigma_offset) ) )
             
             #  - to prevent deadlocks when sampling continuously, increase the sampling space by inflating the standard deviation of the gaussian sampling
-            # Experimental: Increase sigma by ~1.1 each iteration
-            sigma *= 1.1
 
             point = Point(x, y, z)
             point_valid = self.pointValid(point)
@@ -179,6 +177,9 @@ class RRT:
 
     # # #{ setDistance()
     def setDistance(self, p_from, p_to, length):
+        '''
+        Clamp output vector to be less or equal to the max allowable branch distance.
+        '''
         vec      = np.array([p_to[0] - p_from[0], p_to[1] - p_from[1], p_to[2] - p_from[2]])
         vec_norm = np.linalg.norm(vec)
         if vec_norm < length:
@@ -229,6 +230,9 @@ class RRT:
 
     # # #{ getParentWithOptimalCost()
     def getParentWithOptimalCost(self, point, closest_point, neighborhood):
+        '''
+        Returns the node with the lowest overall cost within the neighborhood.
+        '''
 
         parent = closest_point
         cost   = self.tree.get_cost(closest_point) + distEuclidean(closest_point, point)
@@ -236,14 +240,12 @@ class RRT:
         neighborhood_points = self.getPointsInNeighborhood(point, neighborhood)
         for neighbor in neighborhood_points:
 
-            raise NotImplementedError('[STUDENTS TODO] Getting node parents in RRT* not implemented. You have to finish it.')
-            # Tips:
             #  - look for neighbor which when connected yields minimal path cost all the way back to the start
             #  - you might need functions 'self.tree.get_cost()' or 'distEuclidean()'
-
-            # TODO: fill these two variables
-            cost = float('inf') 
-            parent = closest_point
+            neighbor_cost = self.tree.get_cost(neighbor) + distEuclidean(point, neighbor)
+            if neighbor_cost < cost:
+                cost = neighbor_cost
+                parent = neighbor
 
         return parent, cost
     # # #}
