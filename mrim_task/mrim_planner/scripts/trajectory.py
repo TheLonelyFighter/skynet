@@ -610,7 +610,7 @@ class TrajectoryUtils():
         ## |  [COLLISION AVOIDANCE METHOD #2]: Delay UAV with shorter trajectory at start until there is no collision occurring  |
         elif method == 'delay_till_no_collisions_occur':
 
-            raise NotImplementedError('[STUDENTS TODO] Collision prevention method \'delay_till_no_collisions_occur\' not finished. You have to finish it on your own.')
+            #raise NotImplementedError('[STUDENTS TODO] Collision prevention method \'delay_till_no_collisions_occur\' not finished. You have to finish it on your own.')
             # Tips:
             #  - you might select which trajectory it is better to delay
             #  - the smallest delay step is the sampling step stored in variable 'self.dT'
@@ -631,7 +631,7 @@ class TrajectoryUtils():
             while collision_flag:
 
                 # delay the shorter-trajectory UAV at the start point by sampling period
-
+                #trajectories[delay_robot_idx].delayStart(5)
                 if i < 10:
                     delay_t += delay_step
                     # TIP: use function `trajectory.delayStart(X)` to delay a UAV at the start location by X seconds
