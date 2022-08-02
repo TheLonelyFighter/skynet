@@ -67,10 +67,13 @@ class Node:
     def pos(self):
         return self.__pos
 
-    def __heuristicFunction(self):
+    def __heuristicFunction(self) -> float:
         a = self.pos[0] - self.goal[0]
         b = self.pos[1] - self.goal[1]
         c = self.pos[2] - self.goal[2]
+
+        # Implement heuristic function as euclidean distance
+        return np.linalg.norm([a,b,c])
 
         raise NotImplementedError('[STUDENTS TODO] Heuristic function guiding the state space exploration not implemented. You have to finish it on your own.')
 # # #}
@@ -81,6 +84,7 @@ class AStar():
     def __init__(self, grid, safety_distance, timeout, straighten=True):
         self.grid            = grid
         self.safety_distance = safety_distance
+        # 3d-neighborhood
         self.neighborhood    = [p for p in itertools.product([0, 1, -1], repeat=3) if not (p[0] == 0 and p[1] == 0 and p[2] == 0)] # 26-neighborhood
         self.straighten      = straighten
         self.timeout         = timeout
