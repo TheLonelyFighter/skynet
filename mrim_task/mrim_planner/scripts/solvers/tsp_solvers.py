@@ -137,7 +137,7 @@ class TSPSolver3D():
                         path_planner_method='euclidean')
                 else:
                     path, distance = self.compute_path(g1, g2, path_planner, 
-                        path_planner_method='rrtstar')
+                        path_planner_method=path_planner['path_planning_method'])
                 # store paths/distances in matrices
                 path[-1].heading = g2.heading   # Add in the heading of the last member, to ensure symmetry
                 print([p.asList() for p in path])
