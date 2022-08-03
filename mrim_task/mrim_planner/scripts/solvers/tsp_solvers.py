@@ -122,7 +122,7 @@ class TSPSolver3D():
                 g1 = viewpoints[a].pose
                 g2 = viewpoints[b].pose
 
-                print(f"Checking between idx:{a} {g1} and idx:{b} {g2}")
+                # print(f"Checking between idx:{a} {g1} and idx:{b} {g2}")
 
                 # estimate distances between the viewpoints
                 # If there is a straight line connecting g1 and g2, just use euclidean.
@@ -140,7 +140,7 @@ class TSPSolver3D():
                         path_planner_method=path_planner['path_planning_method'])
                 # store paths/distances in matrices
                 path[-1].heading = g2.heading   # Add in the heading of the last member, to ensure symmetry
-                print([p.asList() for p in path])
+                # print([p.asList() for p in path])
                 self.paths[(a, b)]   = path
                 self.paths[(b, a)]   = list(reversed(path))
                 self.distances[a][b] = distance
@@ -218,7 +218,7 @@ class TSPSolver3D():
 
         # compute the shortest sequence given the distance matrix
         sequence = self.compute_tsp_sequence()
-        print("TSP sequence:", sequence)
+        # print("TSP sequence:", sequence)
 
         path = []
         n    = len(self.distances)

@@ -322,6 +322,7 @@ class RRT:
                 if distEuclidean(point, self.end) < branch_size and self.validateLinePath(point, self.end):
                     self.tree.add_node(self.end, point, self.tree.get_cost(point) + distEuclidean(self.end, point))
                     self.tree.valid = True
+                    print(f"[INFO] Found solution in {time.time()-start_time:.2f}")
             
             # Gaussian sampling: increase standard deviation of the sampling Normal distribution
             elif self.gaussian_sampling:
