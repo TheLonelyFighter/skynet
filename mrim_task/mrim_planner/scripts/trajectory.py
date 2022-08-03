@@ -185,7 +185,6 @@ class TrajectoryUtils():
             subtraj_len = self.getLength(subtraj)
 
             ## | ----------------------- Interpolate ---------------------- |
-            hdg_acc = 0 # distance accumulator
 
             # include start node
             wps_interp.append(subtraj[0])
@@ -197,13 +196,8 @@ class TrajectoryUtils():
                 subtraj_0 = subtraj[i - 1].point
                 subtraj_1 = subtraj[i].point
 
-                hdg_acc += distEuclidean(subtraj_0, subtraj_1)
-                hdg_proportion = hdg_acc / subtraj_len
+                hdg_proportion = distEuclidean(subtraj_0, subtraj_1)/subtraj_len
 
-                # [STUDENTS TODO, COMPULSORY] Implement heading interpolation here
-                # Tips:
-
-                # [STUDENTS TODO] Change variable 'hdg_interp', nothing else
                 #  - do not forget to wrap angle to <-pi, pi) (see/use wrapAngle() in utils.py)
                 hdg_interp = wrapAngle(hdg_proportion*d_hdg + hdg_from)
 
@@ -452,13 +446,10 @@ class TrajectoryUtils():
 
             sampling_step = trajectory.dT
 
-            # STUDENTS TODO: Sample the path parametrization 'toppra_trajectory' (instance of TOPPRA library).
-            raise NotImplementedError('[STUDENTS TODO] Trajectory sampling not finished. You have to implement it on your own.')
-            # Tips:
-            #  - check documentation for TOPPRA (look for eval() function): https://hungpham2511.github.io/toppra/index.html
             #  - use 'toppra_trajectory' and the predefined sampling step 'sampling_step'
-
-            samples = [] # [STUDENTS TODO] Fill this variable with trajectory samples
+            #  - check documentation for TOPPRA (look for eval() function): https://hungpham2511.github.io/toppra/index.html
+            ts_sample = np.arange(0, toppra_trajectory.duration, sampling_step)
+            samples = toppra_trajectory.eval(ts_sample)
 
             # Convert to Trajectory class
             poses      = [Pose(q[0], q[1], q[2], q[3]) for q in samples]
