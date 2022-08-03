@@ -139,7 +139,7 @@ class TSPSolver3D():
                     path, distance = self.compute_path(g1, g2, path_planner, 
                         path_planner_method='rrtstar')
                 # store paths/distances in matrices
-                path[-1].heading = g2.heading
+                path[-1].heading = g2.heading   # Add in the heading of the last member, to ensure symmetry
                 print([p.asList() for p in path])
                 self.paths[(a, b)]   = path
                 self.paths[(b, a)]   = list(reversed(path))
