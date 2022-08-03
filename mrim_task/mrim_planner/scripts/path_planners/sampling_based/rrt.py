@@ -1,7 +1,7 @@
 import numpy as np
 import random, time
 from utils import distEuclidean
-from data_types import Point
+from data_types import Point, Pose
 
 # # #{ class Tree
 class Tree:
@@ -43,6 +43,36 @@ class Tree:
 
         return path
 # # #}
+
+def check_line_of_sight(p_from, p_to, path_planner, 
+    discretization_factor:float=0.1, 
+    check_bounds:bool=True):
+    '''Straight-up copy of `RRT.validateLinePath()`, except that it directly takes in the
+    `path_planner` dict.'''
+    v_from      = np.array([p_from[0], p_from[1], p_from[2]])
+    v_to        = np.array([p_to[0], p_to[1], p_to[2]])
+    v_from_to   = v_to - v_from
+    len_from_to = np.linalg.norm(v_from_to)
+
+    len_ptr = 0.0
+
+    def check_point_valid(point: Point, path_planner, check_bounds=True):
+
+        if check_bounds and not path_planner['bounds'].valid(point):
+            return False
+
+        # check if point is at least safety_distance away from the nearest obstacle
+        nn_dist, _  = path_planner['obstacles_kdtree'].query(point.asList(), k=1)
+        return nn_dist > path_planner['safety_distance']
+
+    while len_ptr < len_from_to:
+        p_ptr = v_from + len_ptr * v_from_to
+        if not check_point_valid(Point(p_ptr[0], p_ptr[1], p_ptr[2]), path_planner, 
+            check_bounds):
+            return False
+        len_ptr += discretization_factor
+       
+    return check_point_valid(Point(p_to[0], p_to[1], p_to[2]), path_planner)
 
 # # #{ class RRT
 class RRT:
@@ -142,18 +172,25 @@ class RRT:
 
             #  - sample from Normal distribution: use numpy.random.normal (https://numpy.org/doc/stable/reference/random/generated/numpy.random.normal.html)
             # Clamp between [min, max] for the appropriate dimension
+            
+            # Somehow, adding the sigma_offset breaks the Gaussian sampling.
+            # Likely, this results in the variance of the system growing out of bound quickly
+            # and leading it to sample outside the allowed bounds.
+            # sigma_used = sigma + sigma_offset
+            sigma_used = sigma
+
             x = max(self.bounds.point_min.x, min(
                 self.bounds.point_max.x, 
-                np.random.normal(loc=mean[0], scale=sigma[0]) ) )
+                np.random.normal(loc=mean[0], scale=sigma_used[0]) ) )
             y = max(self.bounds.point_min.y, min(
                 self.bounds.point_max.y, 
-                np.random.normal(loc=mean[1], scale=sigma[1]) ) )
+                np.random.normal(loc=mean[1], scale=sigma_used[1]) ) )
             z = max(self.bounds.point_min.z, min(
                 self.bounds.point_max.z, 
-                np.random.normal(loc=mean[2], scale=sigma[2]) ) )
+                np.random.normal(loc=mean[2], scale=sigma_used[2]) ) )
             
             #  - to prevent deadlocks when sampling continuously, increase the sampling space by inflating the standard deviation of the gaussian sampling
-            sigma *= 1.1
+            sigma *= 1.05
 
             point = Point(x, y, z)
             point_valid = self.pointValid(point)
