@@ -14,7 +14,7 @@ from scipy.spatial.kdtree import KDTree
 from utils import *
 from path_planners.grid_based.grid_3d import Grid3D
 from path_planners.grid_based.astar   import AStar
-from path_planners.sampling_based.rrt import RRT
+from path_planners.sampling_based.rrt import RRT, check_line_of_sight
 
 from solvers.LKHInvoker import LKHInvoker
 
@@ -96,30 +96,56 @@ class TSPSolver3D():
         self.setup(problem, path_planner, viewpoints)
 
         n              = len(viewpoints)
-        self.distances = np.zeros((n, n))
+        self.distances = np.full((n, n), -1.0)
         self.paths = {}
+
+        print("Viewpoints:", [p.pose.asList() for p in viewpoints])
 
         # find path between each pair of goals (a, b)
         for a in range(n):
             for b in range(n):
-                if a == b:
+                # Pairwise distances have been calculated already
+                if a == b or self.distances[a][b]!=-1.0:
                     continue
 
-                # [STUDENTS TODO]
                 #   - Play with distance estimates in TSP (tsp/distance_estimates parameter in config) and see how it influences the solution
                 #   - You will probably see that computing for all poses from both sets takes a long time.
                 #   - Think if you can limit the number of computations or decide which distance-estimating method use for each point-pair.
+                #       --> The distance matrix is symmetric. Avoid calculating identical values.
+                #       --> Note that the straighten_paths param that has been set means that
+                #           we will end up with straight paths from any two points that have
+                #           line-of-sight. Therefore, we can use the euclidean distance 
+                #           estimate without loss of performance in this case.
+                #           In other cases, we can use RRT(*) for a better estimate.
 
                 # get poses of the viewpoints
                 g1 = viewpoints[a].pose
                 g2 = viewpoints[b].pose
 
-                # estimate distances between the viewpoints
-                path, distance = self.compute_path(g1, g2, path_planner, path_planner['distance_estimation_method'])
+                print(f"Checking between idx:{a} {g1} and idx:{b} {g2}")
 
+                # estimate distances between the viewpoints
+                # If there is a straight line connecting g1 and g2, just use euclidean.
+                # Else, we try to use rrtstar.
+
+                # If I had more time I would refactor RRT.validateLinePath to be a class 
+                # method, but probably it's alright just to rip out the logic to use here.
+
+                los = check_line_of_sight(g1.asList(), g2.asList(), path_planner, check_bounds=False)
+                if los:
+                    path, distance = self.compute_path(g1, g2, path_planner, 
+                        path_planner_method='euclidean')
+                else:
+                    path, distance = self.compute_path(g1, g2, path_planner, 
+                        path_planner_method='rrtstar')
                 # store paths/distances in matrices
+                path[-1].heading = g2.heading
+                print([p.asList() for p in path])
                 self.paths[(a, b)]   = path
+                self.paths[(b, a)]   = list(reversed(path))
                 self.distances[a][b] = distance
+                self.distances[b][a] = distance
+
 
         # compute TSP tour
         path = self.compute_tsp_tour(viewpoints, path_planner)
@@ -192,6 +218,7 @@ class TSPSolver3D():
 
         # compute the shortest sequence given the distance matrix
         sequence = self.compute_tsp_sequence()
+        print("TSP sequence:", sequence)
 
         path = []
         n    = len(self.distances)
@@ -201,12 +228,17 @@ class TSPSolver3D():
             a_idx       = sequence[a]
             b_idx       = sequence[b]
 
+            '''
             # if the paths are already computed
             if path_planner['distance_estimation_method'] == path_planner['path_planning_method']:
                 actual_path = self.paths[(a_idx, b_idx)]
             # if the path planning and distance estimation methods differ, we need to compute the path
             else:
                 actual_path, _ = self.compute_path(viewpoints[a_idx].pose, viewpoints[b_idx].pose, path_planner, path_planner['path_planning_method'])
+            '''
+
+            # Based on the logic in `plan_tour`, we should not need to replan paths
+            actual_path = self.paths[(a_idx, b_idx)]
 
             # join paths
             path = path + actual_path[:-1]
