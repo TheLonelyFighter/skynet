@@ -621,9 +621,12 @@ class TrajectoryUtils():
             traj_times = [t.getTime() for t in trajectories]
             traj_lens  = [t.getLength() for t in trajectories]
 
+            print("T", traj_times)
+            print("length", traj_lens)
+
             # Decide which UAV should be delayed
             # [STUDENTS TODO] CHANGE BELOW
-            delay_robot_idx, nondelay_robot_idx = 0, 1
+            delay_robot_idx, nondelay_robot_idx = 1, 0
 
             # TIP: use function `self.trajectoriesCollide()` to check if two trajectories are in collision
             collision_flag, collision_idx = \
@@ -633,8 +636,7 @@ class TrajectoryUtils():
             while collision_flag:
 
                 # delay the shorter-trajectory UAV at the start point by sampling period
-                #trajectories[delay_robot_idx].delayStart(5)
-                if i < 10:
+                if i < 20:
                     delay_t += delay_step
                     # TIP: use function `trajectory.delayStart(X)` to delay a UAV at the start location by X seconds
                     trajectories[delay_robot_idx].delayStart(delay_step)

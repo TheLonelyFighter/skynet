@@ -1,5 +1,5 @@
 problem:
-  name: "single_tower.problem" # [single_tower.problem, four_towers_small.problem, four_towers_large.problem]
+  name: "four_towers_small.problem" # [single_tower.problem, four_towers_small.problem, four_towers_large.problem]
   plot: False
 
 # Parameters for Traveling Salesman Problem
