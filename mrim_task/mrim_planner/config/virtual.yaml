@@ -53,6 +53,6 @@ visualization:
 
   python:
     trajectories:      False
-    dynamics:          True
+    dynamics:          False
     mutual_distance:   False
     obstacle_distance: False

@@ -103,7 +103,7 @@ class TSPSolver3D():
         np.fill_diagonal(self.distances, 0)     # Make sure that everything is 0, as it should be
         self.paths = {}
 
-        print("Viewpoints:", [p.pose.asList() for p in viewpoints])
+        # print("Viewpoints:", [p.pose.asList() for p in viewpoints])
 
         # find path between each pair of goals (a, b)
         for a in range(n):
