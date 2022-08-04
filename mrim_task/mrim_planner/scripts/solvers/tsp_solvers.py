@@ -95,8 +95,12 @@ class TSPSolver3D():
         # Setup 3D grid for grid-based planners and KDtree for sampling-based planners
         self.setup(problem, path_planner, viewpoints)
 
+        self.tooFarAwayPairs = []   # Tracking distance heuristic
+        self.tooFarAwayDistances = {}
+
         n              = len(viewpoints)
-        self.distances = np.full((n, n), -1.0)
+        self.distances = np.full((n, n), -1.0)  # Fill with a negative sentinel value
+        np.fill_diagonal(self.distances, 0)     # Make sure that everything is 0, as it should be
         self.paths = {}
 
         print("Viewpoints:", [p.pose.asList() for p in viewpoints])
@@ -131,13 +135,26 @@ class TSPSolver3D():
                 # If I had more time I would refactor RRT.validateLinePath to be a class 
                 # method, but probably it's alright just to rip out the logic to use here.
 
+                # First, check the distances
+                path, distance = self.compute_path(g1, g2, path_planner, path_planner_method='euclidean')
                 los = check_line_of_sight(g1.asList(), g2.asList(), path_planner, check_bounds=False)
-                if los:
-                    path, distance = self.compute_path(g1, g2, path_planner, 
-                        path_planner_method='euclidean')
-                else:
-                    path, distance = self.compute_path(g1, g2, path_planner, 
-                        path_planner_method=path_planner['path_planning_method'])
+
+                DIST_THRESHOLD = 5.0    # tunable
+                if not los:
+                    if distance > DIST_THRESHOLD:
+                        # Too far away. Do not compute a path.
+                        self.tooFarAwayPairs.append( (a,b) )
+                        self.tooFarAwayPairs.append( (b,a) )
+                        self.tooFarAwayDistances[(a,b)] = distance
+                        self.tooFarAwayDistances[(b,a)] = distance
+                        
+                        # print(a, b, f"is too far away. Distance: {distance:.2f}")
+                        distance *= 3 # bias the solver away from straight lines
+                    else:
+                        # No straight-line path, so we need to use a more accurate estimate.
+                        path, distance = self.compute_path(g1, g2, path_planner, 
+                            path_planner_method=path_planner['path_planning_method'])
+
                 # store paths/distances in matrices
                 path[-1].heading = g2.heading   # Add in the heading of the last member, to ensure symmetry
                 # print([p.asList() for p in path])
@@ -218,7 +235,23 @@ class TSPSolver3D():
 
         # compute the shortest sequence given the distance matrix
         sequence = self.compute_tsp_sequence()
+        
         # print("TSP sequence:", sequence)
+        # for a, b in self.tooFarAwayPairs:
+        #     print(f"{a}, {b}, {self.tooFarAwayDistances[(a,b)]:.2f}")
+
+        for i in range(1, len(sequence)):
+            a, b = sequence[i-1], sequence[i]
+            if (a,b) in self.tooFarAwayPairs:
+                print(f"Path between {a} and {b} was not calculated. Dist matrix: {self.distances[a][b]} Original dist: {self.tooFarAwayDistances[(a,b)]:.2f}")
+                print("Calculating solution now")
+
+                g1 = viewpoints[a].pose
+                g2 = viewpoints[b].pose
+
+                self.paths[(a,b)], _ = self.compute_path(g1, g2, path_planner, 
+                            path_planner_method=path_planner['path_planning_method'])
+                
 
         path = []
         n    = len(self.distances)
@@ -262,6 +295,11 @@ class TSPSolver3D():
         '''
 
         n = len(self.distances)
+
+        # print("Distances before computing TSP sequence:")
+        # for i in range(n):
+        #     print([int(elem*10) for elem in self.distances[i,:]])
+
 
         fname_tsp = "problem"
         user_comment = "a comment by the user"
@@ -334,10 +372,10 @@ class TSPSolver3D():
                             assigned_clusters[ctr_it] = uav_it
 
             # for debugging
-            print("Distance Matrix")
-            print(d_mat)
-            print("Assigned clusters")
-            print(assigned_clusters)
+            # print("Distance Matrix")
+            # print(d_mat)
+            # print("Assigned clusters")
+            # print(assigned_clusters)
 
             assert len(assigned_clusters) == len(set(assigned_clusters.values())), f"There is a duplicate assignment during clustering. assigned_clusters: f{assigned_clusters}"
 

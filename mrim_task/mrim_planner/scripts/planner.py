@@ -166,10 +166,10 @@ class MrimPlanner:
             viewpoints[r].extend(clusters[r])
 
         # print out viewpoints
-        for i in range(len(viewpoints)):
-            print('viewpoints for UAV:', problem.robot_ids[i])
-            for vp in viewpoints[i]:
-                print('   [{:d}]:'.format(vp.idx), vp.pose)
+        # for i in range(len(viewpoints)):
+        #     print('viewpoints for UAV:', problem.robot_ids[i])
+        #     for vp in viewpoints[i]:
+        #         print('   [{:d}]:'.format(vp.idx), vp.pose)
 
         # add VPs to offline visualization
         plotter.addViewPoints(viewpoints, self._viewpoints_distance)

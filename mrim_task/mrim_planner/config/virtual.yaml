@@ -17,7 +17,7 @@ path_planner:
   rrt:
     branch_size: 2.5 # (m)
     sampling:
-      method: 'unifrom' # [STUDENTS TODO: implement better method than the default] Method for sampling random points: [uniform (default), gaussian]
+      method: 'gaussian' # [STUDENTS TODO: implement better method than the default] Method for sampling random points: [uniform (default), gaussian]
       gaussian:
         stddev_inflation: 0.1 # Inflation of standard deviation in all axes during gaussian sampling (m)
     star:
@@ -25,7 +25,7 @@ path_planner:
 
   # A* method parameters
   astar:
-    grid_resolution: 0.5 # (m)
+    grid_resolution: 0.4 # (m)
 
 # Parameters for path smoothing
 path_smoothing:
