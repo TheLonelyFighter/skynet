@@ -1,6 +1,6 @@
 # Winner of the real world autonomous UAV challenge at MRS Summer School 2022
 
-Special thanks to [Tian Yi]{https://tianyilim.github.io/} for his brilliant intuition, but also to [Luiz]{https://github.com/LuizFTiberio} and [Ayumi]{https://github.com/Byson-source} for their great team work and for making this project possible.
+Special thanks to [Tian Yi](https://tianyilim.github.io/) for his brilliant intuition, but also to [Luiz](https://github.com/LuizFTiberio) and [Ayumi](https://github.com/Byson-source) for their great team work and for making this project possible.
 
 
 
