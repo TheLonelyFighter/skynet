@@ -8,12 +8,13 @@ import numpy as np
 from random import randint
 
 from sklearn.cluster import KMeans
+from sklearn.metrics import pairwise_distances
 from scipy.spatial.kdtree import KDTree
 
 from utils import *
 from path_planners.grid_based.grid_3d import Grid3D
 from path_planners.grid_based.astar   import AStar
-from path_planners.sampling_based.rrt import RRT
+from path_planners.sampling_based.rrt import RRT, check_line_of_sight
 
 from solvers.LKHInvoker import LKHInvoker
 
@@ -21,7 +22,7 @@ class TSPSolver3D():
 
     ALLOWED_PATH_PLANNERS               = ('euclidean', 'astar', 'rrt', 'rrtstar')
     ALLOWED_DISTANCE_ESTIMATION_METHODS = ('euclidean', 'astar', 'rrt', 'rrtstar')
-    GRID_PLANNERS                       = ('astar')
+    GRID_PLANNERS                       = ('astar', )
 
     def __init__(self):
         self.lkh = LKHInvoker()
@@ -94,31 +95,74 @@ class TSPSolver3D():
         # Setup 3D grid for grid-based planners and KDtree for sampling-based planners
         self.setup(problem, path_planner, viewpoints)
 
+        self.tooFarAwayPairs = []   # Tracking distance heuristic
+        self.tooFarAwayDistances = {}
+
         n              = len(viewpoints)
-        self.distances = np.zeros((n, n))
+        self.distances = np.full((n, n), -1.0)  # Fill with a negative sentinel value
+        np.fill_diagonal(self.distances, 0)     # Make sure that everything is 0, as it should be
         self.paths = {}
+
+        # print("Viewpoints:", [p.pose.asList() for p in viewpoints])
 
         # find path between each pair of goals (a, b)
         for a in range(n):
             for b in range(n):
-                if a == b:
+                # Pairwise distances have been calculated already
+                if a == b or self.distances[a][b]!=-1.0:
                     continue
 
-                # [STUDENTS TODO]
                 #   - Play with distance estimates in TSP (tsp/distance_estimates parameter in config) and see how it influences the solution
                 #   - You will probably see that computing for all poses from both sets takes a long time.
                 #   - Think if you can limit the number of computations or decide which distance-estimating method use for each point-pair.
+                #       --> The distance matrix is symmetric. Avoid calculating identical values.
+                #       --> Note that the straighten_paths param that has been set means that
+                #           we will end up with straight paths from any two points that have
+                #           line-of-sight. Therefore, we can use the euclidean distance 
+                #           estimate without loss of performance in this case.
+                #           In other cases, we can use RRT(*) for a better estimate.
 
                 # get poses of the viewpoints
                 g1 = viewpoints[a].pose
                 g2 = viewpoints[b].pose
 
+                # print(f"Checking between idx:{a} {g1} and idx:{b} {g2}")
+
                 # estimate distances between the viewpoints
-                path, distance = self.compute_path(g1, g2, path_planner, path_planner['distance_estimation_method'])
+                # If there is a straight line connecting g1 and g2, just use euclidean.
+                # Else, we try to use rrtstar.
+
+                # If I had more time I would refactor RRT.validateLinePath to be a class 
+                # method, but probably it's alright just to rip out the logic to use here.
+
+                # First, check the distances
+                path, distance = self.compute_path(g1, g2, path_planner, path_planner_method='euclidean')
+                los = check_line_of_sight(g1.asList(), g2.asList(), path_planner, check_bounds=False)
+
+                DIST_THRESHOLD = 5.0    # tunable
+                if not los:
+                    if distance > DIST_THRESHOLD:
+                        # Too far away. Do not compute a path.
+                        self.tooFarAwayPairs.append( (a,b) )
+                        self.tooFarAwayPairs.append( (b,a) )
+                        self.tooFarAwayDistances[(a,b)] = distance
+                        self.tooFarAwayDistances[(b,a)] = distance
+                        
+                        # print(a, b, f"is too far away. Distance: {distance:.2f}")
+                        distance *= 3 # bias the solver away from straight lines
+                    else:
+                        # No straight-line path, so we need to use a more accurate estimate.
+                        path, distance = self.compute_path(g1, g2, path_planner, 
+                            path_planner_method=path_planner['path_planning_method'])
 
                 # store paths/distances in matrices
+                path[-1].heading = g2.heading   # Add in the heading of the last member, to ensure symmetry
+                # print([p.asList() for p in path])
                 self.paths[(a, b)]   = path
+                self.paths[(b, a)]   = list(reversed(path))
                 self.distances[a][b] = distance
+                self.distances[b][a] = distance
+
 
         # compute TSP tour
         path = self.compute_tsp_tour(viewpoints, path_planner)
@@ -191,6 +235,23 @@ class TSPSolver3D():
 
         # compute the shortest sequence given the distance matrix
         sequence = self.compute_tsp_sequence()
+        
+        # print("TSP sequence:", sequence)
+        # for a, b in self.tooFarAwayPairs:
+        #     print(f"{a}, {b}, {self.tooFarAwayDistances[(a,b)]:.2f}")
+
+        for i in range(1, len(sequence)):
+            a, b = sequence[i-1], sequence[i]
+            if (a,b) in self.tooFarAwayPairs:
+                print(f"Path between {a} and {b} was not calculated. Dist matrix: {self.distances[a][b]} Original dist: {self.tooFarAwayDistances[(a,b)]:.2f}")
+                print("Calculating solution now")
+
+                g1 = viewpoints[a].pose
+                g2 = viewpoints[b].pose
+
+                self.paths[(a,b)], _ = self.compute_path(g1, g2, path_planner, 
+                            path_planner_method=path_planner['path_planning_method'])
+                
 
         path = []
         n    = len(self.distances)
@@ -200,12 +261,17 @@ class TSPSolver3D():
             a_idx       = sequence[a]
             b_idx       = sequence[b]
 
+            '''
             # if the paths are already computed
             if path_planner['distance_estimation_method'] == path_planner['path_planning_method']:
                 actual_path = self.paths[(a_idx, b_idx)]
             # if the path planning and distance estimation methods differ, we need to compute the path
             else:
                 actual_path, _ = self.compute_path(viewpoints[a_idx].pose, viewpoints[b_idx].pose, path_planner, path_planner['path_planning_method'])
+            '''
+
+            # Based on the logic in `plan_tour`, we should not need to replan paths
+            actual_path = self.paths[(a_idx, b_idx)]
 
             # join paths
             path = path + actual_path[:-1]
@@ -229,6 +295,11 @@ class TSPSolver3D():
         '''
 
         n = len(self.distances)
+
+        # print("Distances before computing TSP sequence:")
+        # for i in range(n):
+        #     print([int(elem*10) for elem in self.distances[i,:]])
+
 
         fname_tsp = "problem"
         user_comment = "a comment by the user"
@@ -268,13 +339,51 @@ class TSPSolver3D():
             # Prepare positions of the viewpoints in the world
             positions = np.array([vp.pose.point.asList() for vp in viewpoints])
 
-            raise NotImplementedError('[STUDENTS TODO] KMeans clustering of viewpoints not implemented. You have to finish it on your own')
-            # Tips:
             #  - utilize sklearn.cluster.KMeans implementation (https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html)
-            #  - after finding the labels, you may want to swap the classes (e.g., by looking at the distance of the UAVs from the cluster centers)
+            kmeans_res = KMeans(n_clusters=k).fit(positions)
 
-            # TODO: fill 1D list 'labels' of size len(viewpoints) with indices of the robots
-            labels = [randint(0, k - 1) for vp in viewpoints]
+            #  - after finding the labels, you may want to swap the classes (e.g., by looking at the distance of the UAVs from the cluster centers)
+            # Get pairwise distances between cluster centers and initial UAV positions
+            cluster_ctrs = kmeans_res.cluster_centers_
+            start_poses = np.array([
+                [
+                    problem.start_poses[i].position.x,
+                    problem.start_poses[i].position.y,
+                    problem.start_poses[i].position.z,
+                ] for i in range(k)
+            ])
+
+            # We use euclidean distance as the pairwise distance metric
+            d_mat = pairwise_distances(cluster_ctrs, start_poses)
+
+            # Mapping cluster index to UAV index
+            assigned_clusters = dict.fromkeys(range(k), -1)
+            
+            # Assign index to the cluster center with the minimum distance.
+            # Implicitly, UAV1 has priority over UAV2.
+            for ctr_it in range(k):
+                min_dist = np.inf
+                for uav_it in range(k):
+                    # Check for minimal distance
+                    if d_mat[ctr_it, uav_it] < min_dist:
+                        # Check that there are no duplicates
+                        if uav_it not in assigned_clusters.values():
+                            min_dist = d_mat[ctr_it, uav_it]
+                            assigned_clusters[ctr_it] = uav_it
+
+            # for debugging
+            # print("Distance Matrix")
+            # print(d_mat)
+            # print("Assigned clusters")
+            # print(assigned_clusters)
+
+            assert len(assigned_clusters) == len(set(assigned_clusters.values())), f"There is a duplicate assignment during clustering. assigned_clusters: f{assigned_clusters}"
+
+            labels = kmeans_res.labels_
+            for i in range(len(labels)):
+                # Simply call the mapping from cluster index to UAV index
+                labels[i] = assigned_clusters[labels[i]]
+
 
         ## | -------------------- Random clustering ------------------- |
         else:

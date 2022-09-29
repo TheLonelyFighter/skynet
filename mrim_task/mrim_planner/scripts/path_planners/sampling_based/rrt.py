@@ -1,7 +1,7 @@
 import numpy as np
 import random, time
 from utils import distEuclidean
-from data_types import Point
+from data_types import Point, Pose
 
 # # #{ class Tree
 class Tree:
@@ -44,6 +44,36 @@ class Tree:
         return path
 # # #}
 
+def check_line_of_sight(p_from, p_to, path_planner, 
+    discretization_factor:float=0.1, 
+    check_bounds:bool=True):
+    '''Straight-up copy of `RRT.validateLinePath()`, except that it directly takes in the
+    `path_planner` dict.'''
+    v_from      = np.array([p_from[0], p_from[1], p_from[2]])
+    v_to        = np.array([p_to[0], p_to[1], p_to[2]])
+    v_from_to   = v_to - v_from
+    len_from_to = np.linalg.norm(v_from_to)
+
+    len_ptr = 0.0
+
+    def check_point_valid(point: Point, path_planner, check_bounds=True):
+
+        if check_bounds and not path_planner['bounds'].valid(point):
+            return False
+
+        # check if point is at least safety_distance away from the nearest obstacle
+        nn_dist, _  = path_planner['obstacles_kdtree'].query(point.asList(), k=1)
+        return nn_dist > path_planner['safety_distance']
+
+    while len_ptr < len_from_to:
+        p_ptr = v_from + len_ptr * v_from_to
+        if not check_point_valid(Point(p_ptr[0], p_ptr[1], p_ptr[2]), path_planner, 
+            check_bounds):
+            return False
+        len_ptr += discretization_factor
+       
+    return check_point_valid(Point(p_to[0], p_to[1], p_to[2]), path_planner)
+
 # # #{ class RRT
 class RRT:
 
@@ -81,13 +111,14 @@ class RRT:
         # smooth the path
         if straighten:
             for i in range(2):
+                # print(f"RRT path straighten it {i+1}:", path)
                 path = self.halveAndTest(path)
+
+        # print('rrt path:', path)
 
         distance = 0.0
         for i in range(1, len(path)):
             distance += distEuclidean(path[i - 1], path[i])
-
-        # print('rrt path:', path)
 
         return path, distance
     # # #}
@@ -139,15 +170,27 @@ class RRT:
         point_valid = False
         while not point_valid:
 
-            raise NotImplementedError('[STUDENTS TODO] Implement Gaussian sampling in RRT to speed up the process and narrow the paths.')
-            # Tips:
             #  - sample from Normal distribution: use numpy.random.normal (https://numpy.org/doc/stable/reference/random/generated/numpy.random.normal.html)
-            #  - to prevent deadlocks when sampling continuously, increase the sampling space by inflating the standard deviation of the gaussian sampling
+            # Clamp between [min, max] for the appropriate dimension
+            
+            # Somehow, adding the sigma_offset breaks the Gaussian sampling.
+            # Likely, this results in the variance of the system growing out of bound quickly
+            # and leading it to sample outside the allowed bounds.
+            # sigma_used = sigma + sigma_offset
+            sigma_used = sigma
 
-            # STUDENTS TODO: Sample XYZ in the state space
-            x = 0
-            y = 0
-            z = 0
+            x = max(self.bounds.point_min.x, min(
+                self.bounds.point_max.x, 
+                np.random.normal(loc=mean[0], scale=sigma_used[0]) ) )
+            y = max(self.bounds.point_min.y, min(
+                self.bounds.point_max.y, 
+                np.random.normal(loc=mean[1], scale=sigma_used[1]) ) )
+            z = max(self.bounds.point_min.z, min(
+                self.bounds.point_max.z, 
+                np.random.normal(loc=mean[2], scale=sigma_used[2]) ) )
+            
+            #  - to prevent deadlocks when sampling continuously, increase the sampling space by inflating the standard deviation of the gaussian sampling
+            sigma *= 1.05
 
             point = Point(x, y, z)
             point_valid = self.pointValid(point)
@@ -173,6 +216,9 @@ class RRT:
 
     # # #{ setDistance()
     def setDistance(self, p_from, p_to, length):
+        '''
+        Clamp output vector to be less or equal to the max allowable branch distance.
+        '''
         vec      = np.array([p_to[0] - p_from[0], p_to[1] - p_from[1], p_to[2] - p_from[2]])
         vec_norm = np.linalg.norm(vec)
         if vec_norm < length:
@@ -223,6 +269,9 @@ class RRT:
 
     # # #{ getParentWithOptimalCost()
     def getParentWithOptimalCost(self, point, closest_point, neighborhood):
+        '''
+        Returns the node with the lowest overall cost within the neighborhood.
+        '''
 
         parent = closest_point
         cost   = self.tree.get_cost(closest_point) + distEuclidean(closest_point, point)
@@ -230,14 +279,12 @@ class RRT:
         neighborhood_points = self.getPointsInNeighborhood(point, neighborhood)
         for neighbor in neighborhood_points:
 
-            raise NotImplementedError('[STUDENTS TODO] Getting node parents in RRT* not implemented. You have to finish it.')
-            # Tips:
             #  - look for neighbor which when connected yields minimal path cost all the way back to the start
             #  - you might need functions 'self.tree.get_cost()' or 'distEuclidean()'
-
-            # TODO: fill these two variables
-            cost = float('inf') 
-            parent = closest_point
+            neighbor_cost = self.tree.get_cost(neighbor) + distEuclidean(point, neighbor)
+            if neighbor_cost < cost:
+                cost = neighbor_cost
+                parent = neighbor
 
         return parent, cost
     # # #}
@@ -275,6 +322,7 @@ class RRT:
                 if distEuclidean(point, self.end) < branch_size and self.validateLinePath(point, self.end):
                     self.tree.add_node(self.end, point, self.tree.get_cost(point) + distEuclidean(self.end, point))
                     self.tree.valid = True
+                    print(f"[INFO] Found solution in {time.time()-start_time:.2f}")
             
             # Gaussian sampling: increase standard deviation of the sampling Normal distribution
             elif self.gaussian_sampling:
@@ -287,21 +335,23 @@ class RRT:
 
     # # #{ halveAndTest()
     def halveAndTest(self, path):
-        pt1 = path[0][0:3]
-        pt2 = path[-1][0:3]
-        
         if len(path) <= 2:
             return path
+        
+        pt1 = path[0][0:3]
+        pt2 = path[-1][0:3]
 
-        raise NotImplementedError('[STUDENTS TODO] RRT: path straightening is not finished. Finish it on your own.')
-        # Tips:
         #  - divide the given path by a certain ratio and use this method recursively
+        # This divide-and-conquer method smooths the path by checking if a line from the
+        # start to end of the path meets with any obstacles. If so, the path is smoothened.
+        # If not, recursively compare halves of the proposed path. 
 
         if not self.validateLinePath(pt1, pt2, check_bounds=False):
             
-            # [STUDENTS TODO] Replace seg1 and seg2 variables effectively
-            seg1 = path[:1]
-            seg2 = path[1:]
+            # Split the path into rough halves.
+            # Recursively call the algorithm on the two halves.
+            seg1 = self.halveAndTest( path[:len(path)//2] )
+            seg2 = self.halveAndTest( path[len(path)//2:] )
 
             seg1.extend(seg2)
             return seg1

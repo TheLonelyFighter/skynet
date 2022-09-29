@@ -7,9 +7,11 @@ Special thanks to [Tian Yi](https://tianyilim.github.io/) for his brilliant intu
 
 # MRS Summer School 2022: multi-robot inspection and monitoring
 
-| Status       | 18.04                                                                                                                                        | 20.04                                                                                                                                       | 22.04                                                                                                                                       |
-| :---         | :---:                                                                                                                                        | :---:                                                                                                                                       | :---:                                                                                                                                       |
-| Installation | [![Status](https://github.com/ctu-mrs/summer-school-2022/workflows/Bionic/badge.svg)](https://github.com/ctu-mrs/summer-school-2022/actions) | [![Status](https://github.com/ctu-mrs/summer-school-2022/workflows/Focal/badge.svg)](https://github.com/ctu-mrs/summer-school-2022/actions) | [![Status](https://github.com/ctu-mrs/summer-school-2022/workflows/Jammy/badge.svg)](https://github.com/ctu-mrs/summer-school-2022/actions) |
+
+|        | 18.04                                                                                                                                        | 20.04                                                                                                                                       | 22.04                                                                                                                                       |
+| :---   | :---:                                                                                                                                        | :---:                                                                                                                                       | :---:                                                                                                                                       |
+| Status | [![Status](https://github.com/ctu-mrs/summer-school-2022/workflows/Bionic/badge.svg)](https://github.com/ctu-mrs/summer-school-2022/actions) | [![Status](https://github.com/ctu-mrs/summer-school-2022/workflows/Focal/badge.svg)](https://github.com/ctu-mrs/summer-school-2022/actions) | [![Status](https://github.com/ctu-mrs/summer-school-2022/workflows/Jammy/badge.svg)](https://github.com/ctu-mrs/summer-school-2022/actions) |
+
 
 In this Summer School task, we will focus on the cooperation of a group of two UAVs (Unmanned Aerial Vehicles) in a 3D environment with obstacles.
 The task is to plan collision-free trajectories of the UAVs so that cameras onboard the UAVs inspect a set of *N* unique inspection points.
@@ -31,7 +33,8 @@ No further changes are made to the host operating system.
 Requirements: Linux OS, approx. 5 GB of HDD space.
 For a non-Ubuntu OS, please, install the Singularity on your own.
 
-1) If you are a `git` veteran, you should `fork` the git repository [github.com/ctu-mrs/summer-school-2022](https://github.com/ctu-mrs/summer-school-2022). This will allow you to store changes to our code.
+1) If you are a `git` veteran, you should `fork` the git repository [github.com/ctu-mrs/summer-school-2022](https://github.com/ctu-mrs/summer-school-2022). This will allow you to store changes to our code. Do not forget to make your fork private unless you want other participants to be able to peek into your code.
+__UPDATE:__ Forked repositories on github cannot be made private. Workaround: Instead of forking the repository, click the plus sign in the top right corner, select Import repository, type in the original repo address `https://github.com/ctu-mrs/summer-school-2022.git` and then the name of your new repository. In the bottom part of the form, you can select Private. 
 2) Clone the repository to `~/git`:
 ```bash
 mkdir -p ${HOME}/git
@@ -237,7 +240,7 @@ The results will be presented during an awards ceremony organized at the experim
 
 **Reasons to assign zero score (and thus to disqualify the solution):**
 
-  1. violation of assigned dynamic constraints of UAVs,
+  1. violation of assigned dynamic constraints of UAVs (**in horizontal and vertical directions only**; violation of constraints on heading does not affect the score but beware that the heading rate/acceleration of the UAV controller will be limited by these constraints),
   2. violation of minimum allowed distance between obstacles and UAVs,
   3. violation of minimum allowed mutual distance between UAVs,
   4. violation of maximum distance of final trajectory point to the predefined starting location,
@@ -265,8 +268,12 @@ Your solution to both the challenges has to conform to constraints summarized in
 | Maximum solution time (soft):                       | 40 s              | 30 s                 |
 | Maximum solution time (hard):                       | 120 s             | 60 s                 |
 | Maximum mission time:                               | 200 s             | 180 s                |
-| Maximum velocity:                                   | 3 m/s             | 3 m/s                |
-| Maximum acceleration:                               | 2 m/s^2           | 2 m/s^2              |
+| Maximum velocity per x and y axes:                  | 2 m/s             | 1 m/s                |
+| Maximum velocity in z axis:                         | 1 m/s             | 0.5 m/s              |
+| Maximum acceleration per x and y axes:              | 2 m/s^2           | 1 m/s^2              |
+| Maximum acceleration in z axis:                     | 1 m/s^2           | 0.5 m/s^2            |
+| Maximum heading rate:                               | 0.5 rad/s         | 0.5 rad/s            |
+| Maximum heading acceleration:                       | 1 rad/s^2         | 1 rad/s^2            |
 | Minimum obstacle distance:                          | 1.5 m             | 2.0 m                |
 | Minimum mutual distance:                            | 2.0 m             | 3.0 m                |
 | Dist. from starting position to stop the mission:\* | 1.0 m             | 1.0 m                |

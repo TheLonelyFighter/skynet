@@ -67,12 +67,13 @@ class Node:
     def pos(self):
         return self.__pos
 
-    def __heuristicFunction(self):
+    def __heuristicFunction(self) -> float:
         a = self.pos[0] - self.goal[0]
         b = self.pos[1] - self.goal[1]
         c = self.pos[2] - self.goal[2]
 
-        raise NotImplementedError('[STUDENTS TODO] Heuristic function guiding the state space exploration not implemented. You have to finish it on your own.')
+        # Implement heuristic function as euclidean distance
+        return np.linalg.norm([a,b,c])
 # # #}
 
 # # #{ class AStar
@@ -81,6 +82,7 @@ class AStar():
     def __init__(self, grid, safety_distance, timeout, straighten=True):
         self.grid            = grid
         self.safety_distance = safety_distance
+        # 3d-neighborhood
         self.neighborhood    = [p for p in itertools.product([0, 1, -1], repeat=3) if not (p[0] == 0 and p[1] == 0 and p[2] == 0)] # 26-neighborhood
         self.straighten      = straighten
         self.timeout         = timeout
@@ -98,16 +100,15 @@ class AStar():
         if len(path) <= 2:
             return path
 
-        raise NotImplementedError('[STUDENTS TODO] A*: path straightening is not finished. Finish it on your own.')
         # Tips:
         #  - divide the given path by a certain ratio and use this method recursively
 
-        # [STUDENTS TODO] REMOVE
         if self.grid.obstacleBetween(pt1, pt2):
 
-            # [STUDENTS TODO] Replace seg1 and seg2 variables effectively
-            seg1 = path[:1]
-            seg2 = path[1:]
+            # Split the path into rough halves.
+            # Recursively call the algorithm on the two halves.
+            seg1 = self.halveAndTest( path[:len(path)//2] )
+            seg2 = self.halveAndTest( path[len(path)//2:] )
 
             seg1.extend(seg2)
             return seg1
