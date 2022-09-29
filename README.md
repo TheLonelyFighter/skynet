@@ -1,8 +1,17 @@
+# Winner of the real world autonomous UAV challenge at MRS Summer School 2022
+
+Special thanks to [Tian Yi](https://tianyilim.github.io/) for his brilliant intuition, but also to [Luiz](https://github.com/LuizFTiberio) and [Ayumi](https://github.com/Byson-source) for their great team work and for making this project possible.
+
+
+
+
 # MRS Summer School 2022: multi-robot inspection and monitoring
+
 
 |        | 18.04                                                                                                                                        | 20.04                                                                                                                                       | 22.04                                                                                                                                       |
 | :---   | :---:                                                                                                                                        | :---:                                                                                                                                       | :---:                                                                                                                                       |
 | Status | [![Status](https://github.com/ctu-mrs/summer-school-2022/workflows/Bionic/badge.svg)](https://github.com/ctu-mrs/summer-school-2022/actions) | [![Status](https://github.com/ctu-mrs/summer-school-2022/workflows/Focal/badge.svg)](https://github.com/ctu-mrs/summer-school-2022/actions) | [![Status](https://github.com/ctu-mrs/summer-school-2022/workflows/Jammy/badge.svg)](https://github.com/ctu-mrs/summer-school-2022/actions) |
+
 
 In this Summer School task, we will focus on the cooperation of a group of two UAVs (Unmanned Aerial Vehicles) in a 3D environment with obstacles.
 The task is to plan collision-free trajectories of the UAVs so that cameras onboard the UAVs inspect a set of *N* unique inspection points.
