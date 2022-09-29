@@ -2,7 +2,10 @@
 
 Special thanks to [Tian Yi](https://tianyilim.github.io/) for his brilliant intuition, but also to [Luiz](https://github.com/LuizFTiberio) and [Ayumi](https://github.com/Byson-source) for their great team work and for making this project possible.
 
-
+![Our winning team](assets/mrs_summer_school_win.png "Our winning team")
+![Debugging path trajectory generation](assets/photo_1.png "Debugging")
+![Flying Drones](assets/photo_2.png "Flying")
+![Drones](assets/photo_3.png "Drones")
 
 
 # MRS Summer School 2022: multi-robot inspection and monitoring
