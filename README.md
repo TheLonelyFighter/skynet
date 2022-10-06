@@ -7,6 +7,8 @@ Special thanks to [Tian Yi](https://tianyilim.github.io/) for his brilliant intu
 ![Flying Drones](assets/photo_2.png "Flying")
 ![Drones](assets/photo_3.png "Drones")
 
+# Note: this repo is a modified fork of the [original](http://mrs.felk.cvut.cz/summer-school/).
+
 
 # MRS Summer School 2022: multi-robot inspection and monitoring
 
